@@ -1,4 +1,4 @@
-$UserId = 'user01@contoso.com'
+$UserId = "user01@contoso.com"
 
 Connect-Graph -Scopes User.Read.All, Directory.Read.All, Organization.Read.All -NoWelcome
 
