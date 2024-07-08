@@ -1,4 +1,4 @@
-$GroupDisplayName = "All Users"
+$GroupDisplayName = "User Group 01"
 
 $Group = Get-MgGroup -Filter "DisplayName eq '$GroupDisplayName'"  -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses | Where-Object AssignedLicenses -ne $null
    
