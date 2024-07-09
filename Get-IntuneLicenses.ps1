@@ -11,6 +11,7 @@ foreach ($License in Get-MgSubscribedSku) {
             
         if ($IntuneServicePlanIds -contains $ServicePlan.ServicePlanId) {
 
+            Write-Output "Service Plan Name: $($ServicePlan.ServicePlanName)"
             Write-Output "License: $($License.SkuPartNumber)"
             
             break
