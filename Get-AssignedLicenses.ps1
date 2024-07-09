@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.GUID cb5f3368-02b7-431c-b75b-03c2dbd46e50
+.GUID 76562dbb-fd24-4f5e-837e-75e8f842091f
 
 .AUTHOR oaltawil@microsoft.com
 
@@ -75,7 +75,7 @@ Get-AssignedLicenses.ps1 -AllGroups
 Get-AssignedLicenses.ps1 -AllUsers
 
     The above command retrieves license details for all users in the directory.
-    
+
 .EXAMPLE
 
 Get-AssignedLicenses.ps1 -InputFilePath .\GroupUserList.csv
@@ -125,10 +125,80 @@ Service Plan Reference: https://learn.microsoft.com/en-us/entra/identity/users/l
     INTUNE_A (Microsoft Intune)                 c1ec4a95-1f05-45b3-a911-aa3fa01094f5
     INTUNE_EDU (Microsoft Intune for Education) da24caf9-af8e-485c-b7c8-e73336da2693  
 #>
-$IntuneServicePlanNames = @(
-    "Intune_A",
-    "Intune_EDU"
-)
+
+#####################################
+#                                   #
+# FUNCTION: Group-Assigned Licenses #
+#                                   #
+#####################################
+function Get-GroupAssignedLicenses {
+    param (
+        [Parameter(Mandatory=$true)]
+        [Microsoft.Graph.PowerShell.Models.MicrosoftGraphGroup[]]
+        $Groups
+    )
+
+    foreach ($Group in $Groups) {
+
+        Write-Host "Group: $($Group.DisplayName)"
+
+        $GroupAssignedLicenses = $Group.AssignedLicenses 
+
+        foreach ($License in $GroupAssignedLicenses) {
+
+            # Retrieve the license details
+            $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $License.SkuId
+
+            $DisabledServicePlanIds = $License.DisabledPlans
+
+            $DisabledServicePlanNames = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $DisabledServicePlanIds | Select-Object -ExpandProperty ServicePlanName
+
+            Write-Host "`t License: $($SubscribedSku.SkuPartNumber)"
+
+            Write-Host "`t `t Disabled Service Plans: $($DisabledServicePlanNames -join ', ') `n"
+
+        }
+
+    }
+
+}
+
+####################################
+#                                  #
+# FUNCTION: User-Assigned Licenses #
+#                                  #
+####################################
+function Get-UserAssignedLicenses {
+    param (
+        [Parameter(Mandatory=$true)]
+        [Microsoft.Graph.PowerShell.Models.MicrosoftGraphUser[]]
+        $Users
+    )
+
+    foreach ($User in $Users) {
+
+        Write-Host "User: $($User.DisplayName)"
+
+        $UserAssignedLicenses = $User.LicenseAssignmentStates
+
+        foreach ($License in $UserAssignedLicenses) {
+
+            # Retrieve the license details
+            $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $License.SkuId
+
+            $DisabledServicePlanIds = $License.DisabledPlans
+
+            $DisabledServicePlanNames = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $DisabledServicePlanIds | Select-Object -ExpandProperty ServicePlanName
+
+            Write-Host "`t License: $($SubscribedSku.SkuPartNumber)"
+
+            Write-Host "`t `t Disabled Service Plans: $($DisabledServicePlanNames -join ', ') `n"
+
+        }
+
+    }
+
+}
 
 #####################
 #                   #
@@ -148,9 +218,18 @@ if ($GroupDisplayNames) {
     # !! Groups without any assigned licenses will be skipped !!
     $Groups = $GroupDisplayNames | Foreach-Object {Get-MgGroup -Filter "DisplayName eq '$_'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses} | Where-Object AssignedLicenses -ne $null
 
-    # Disable the Intune service plans from the groups
-    Get-GroupAssignedLicenses -Groups $Groups
+    if (-not $Groups) {
 
+        Write-Error "Unable to find any groups with assigned licenses and the specified display names: $($GroupDisplayNames -join ', ')"
+
+    }
+    else {
+
+        # Disable the Intune service plans from the groups
+        Get-GroupAssignedLicenses -Groups $Groups
+
+    }
+ 
 }
 # If the user specified the UserPrincipalNames parameter set
 elseif ($UserPrincipalNames) {
@@ -159,8 +238,17 @@ elseif ($UserPrincipalNames) {
     # !! Users without any assigned licenses will be skipped !!
     $Users = $UserPrincipalNames | Foreach-Object {Get-MgUser -Filter "UserPrincipalName eq '$_'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates} | Where-Object LicenseAssignmentStates -ne $null
 
-    # Disable the Intune service plans from the users
-    Get-UserAssignedLicenses -Users $Users
+    if (-not $Users) {
+
+        Write-Error "Unable to find any users with assigned licenses and the specified user principal names: $($UserPrincipalNames -join ', ')"
+
+    }
+    else {
+
+        # Disable the Intune service plans from the users
+        Get-UserAssignedLicenses -Users $Users
+
+    }
 
 }
 # If the user specified the AllGroups parameter set
@@ -209,84 +297,37 @@ elseif ($InputFilePath) {
     # !! Users without any assigned licenses will be skipped !!
     $Users = $DirectoryObjects | Where-Object Type -eq "User" | ForEach-Object {Get-MgUser -Filter "UserPrincipalName eq '$($_.Name)'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates} | Where-Object LicenseAssignmentStates -ne $null
 
-    # Disable the Intune service plans from the users
-    Get-UserAssignedLicenses -Users $Users
+    if (-not $Users) {
+
+        Write-Error "Unable to find any users with assigned licenses and the user principal names specified in the input file path."
+
+    }
+    else {
+
+        # Disable the Intune service plans from the users
+        Get-UserAssignedLicenses -Users $Users
+    
+    }
 
     # Get the groups with the display names specified in the input file path and that have assigned licenses
     # !! Groups without any assigned licenses will be skipped !!
     $Groups = $DirectoryObjects | Where-Object Type -eq "Group" | ForEach-Object {Get-MgGroup -Filter "DisplayName eq '$($_.Name)'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses} | Where-Object AssignedLicenses -ne $null
 
-    # Disable the Intune service plans from the groups
-    Get-GroupAssignedLicenses -Groups $Groups
+    if (-not $Groups) {
+
+        Write-Error "Unable to find any groups with assigned licenses and the display names specified in the input file path."
+
+    }
+    else {
+            
+        # Disable the Intune service plans from the groups
+        Get-GroupAssignedLicenses -Groups $Groups
+    }
 
 }
 else {
 
     # If the user did not specify any of the valid parameter sets, then display an error message
     Write-Error "You must specify one of the following parameters: GroupDisplayNames, UserPrincipalNames, AllGroups, AllUsers, or InputFilePath."
-
-}
-
-function Get-GroupAssignedLicenses {
-    param (
-        [Parameter(Mandatory=$true)]
-        [Microsoft.Graph.Groups.Group[]]
-        $Groups
-    )
-
-    foreach ($Group in $Groups) {
-
-        Write-Host "Group: $($Group.DisplayName)"
-
-        $GroupAssignedLicenses = $Group.AssignedLicenses 
-
-        foreach ($License in $GroupAssignedLicenses) {
-
-            # Retrieve the license details
-            $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $License.SkuId
-
-            $DisabledServicePlanIds = $License.DisabledPlans
-
-            $DisabledServicePlanNames = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $DisabledServicePlanIds | Select-Object -ExpandProperty ServicePlanName
-
-            Write-Host "`t License: $($SubscribedSku.SkuPartNumber)"
-
-            Write-Host "`t `t Disabled Service Plans: $($DisabledServicePlanNames -join ', ') `n"
-
-        }
-
-    }
-
-}
-
-function Get-UserAssignedLicenses {
-    param (
-        [Parameter(Mandatory=$true)]
-        [Microsoft.Graph.Users.User[]]
-        $Users
-    )
-
-    foreach ($User in $Users) {
-
-        Write-Host "User: $($User.DisplayName)"
-
-        $UserAssignedLicenses = $User.LicenseAssignmentStates
-
-        foreach ($License in $UserAssignedLicenses) {
-
-            # Retrieve the license details
-            $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $License.SkuId
-
-            $DisabledServicePlanIds = $License.DisabledPlans
-
-            $DisabledServicePlanNames = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $DisabledServicePlanIds | Select-Object -ExpandProperty ServicePlanName
-
-            Write-Host "`t License: $($SubscribedSku.SkuPartNumber)"
-
-            Write-Host "`t `t Disabled Service Plans: $($DisabledServicePlanNames -join ', ') `n"
-
-        }
-
-    }
 
 }

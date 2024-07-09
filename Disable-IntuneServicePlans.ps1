@@ -337,8 +337,19 @@ if ($GroupDisplayNames) {
     # !! Groups without any assigned licenses will be skipped !!
     $Groups = $GroupDisplayNames | Foreach-Object {Get-MgGroup -Filter "DisplayName eq '$_'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses} | Where-Object AssignedLicenses -ne $null
 
-    # Disable the Intune service plans from the groups
-    Disable-IntuneServicePlansForGroups -Groups $Groups
+    if (-not $Groups) {
+
+        Write-Error "Unable to find any groups with assigned licenses and the specified display names: $($GroupDisplayNames -join ', ')"
+
+    }
+    else {
+
+        Write-Host "Disabling the Intune service plans for the following groups: $($Groups.DisplayName -join ', ')"
+
+        # Disable the Intune service plans from the groups
+        Disable-IntuneServicePlansForGroups -Groups $Groups
+
+    }
 
 }
 # If the user specified the UserPrincipalNames parameter set
@@ -348,8 +359,19 @@ elseif ($UserPrincipalNames) {
     # !! Users without any assigned licenses will be skipped !!
     $Users = $UserPrincipalNames | Foreach-Object {Get-MgUser -Filter "UserPrincipalName eq '$_'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates} | Where-Object LicenseAssignmentStates -ne $null
 
-    # Disable the Intune service plans from the users
-    Disable-IntuneServicePlansForUsers -Users $Users
+    if (-not $Users) {
+
+        Write-Error "Unable to find any users with assigned licenses and the specified user principal names: $($UserPrincipalNames -join ', ')"
+
+    }
+    else {
+
+        Write-Host "Disabling the Intune service plans for the following users: $($Users.DisplayName -join ', ')"
+
+        # Disable the Intune service plans from the users
+        Disable-IntuneServicePlansForUsers -Users $Users
+        
+    }
 
 }
 # If the user specified the AllGroups parameter set
@@ -357,6 +379,8 @@ elseif ($AllGroups) {
 
     # Get all groups with assigned licenses
     $Groups = Get-MgGroup -All -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses | Where-Object AssignedLicenses -ne $null
+
+    Write-Host "Disabling the Intune service plans for the following groups: $($Groups.DisplayName -join ', ')"
 
     # Disable the Intune service plans from the groups
     Disable-IntuneServicePlansForGroups -Groups $Groups
@@ -367,6 +391,8 @@ elseif ($AllUsers) {
 
     # Get all users with assigned licenses
     $Users = Get-MgUser -All -Property DisplayName, Id, Mail, userPrincipalName, LicenseAssignmentStates | Where-Object LicenseAssignmentStates -ne $null
+    
+    Write-Host "Disabling the Intune service plans for the following users: $($Users.DisplayName -join ', ')"
 
     # Disable the Intune service plans from all users
     Disable-IntuneServicePlansForUsers -Users $Users
@@ -398,16 +424,37 @@ elseif ($InputFilePath) {
     # !! Users without any assigned licenses will be skipped !!
     $Users = $DirectoryObjects | Where-Object Type -eq "User" | ForEach-Object {Get-MgUser -Filter "UserPrincipalName eq '$($_.Name)'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates} | Where-Object LicenseAssignmentStates -ne $null
 
-    # Disable the Intune service plans from the users
-    Disable-IntuneServicePlansForUsers -Users $Users
+    if (-not $Users) {
+
+        Write-Error "Unable to find any users with assigned licenses and the specified user principal names: $($UserPrincipalNames -join ', ')"
+
+    }
+    else {
+
+        Write-Host "Disabling the Intune service plans for the following users: $($Users.DisplayName -join ', ')"
+
+        # Disable the Intune service plans from the users
+        Disable-IntuneServicePlansForUsers -Users $Users
+
+    }
 
     # Get the groups with the display names specified in the input file path and that have assigned licenses
     # !! Groups without any assigned licenses will be skipped !!
     $Groups = $DirectoryObjects | Where-Object Type -eq "Group" | ForEach-Object {Get-MgGroup -Filter "DisplayName eq '$($_.Name)'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses} | Where-Object AssignedLicenses -ne $null
 
-    # Disable the Intune service plans from the groups
-    Disable-IntuneServicePlansForGroups -Groups $Groups
+    if (-not $Groups) {
 
+        Write-Error "Unable to find any groups with assigned licenses and the specified display names: $($GroupDisplayNames -join ', ')"
+
+    }
+    else {
+        
+        Write-Host "Disabling the Intune service plans for the following groups: $($Groups.DisplayName -join ', ')"
+
+        # Disable the Intune service plans from the groups
+        Disable-IntuneServicePlansForGroups -Groups $Groups
+
+    }
 
 }
 else {
