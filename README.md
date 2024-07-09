@@ -3,8 +3,8 @@ A sample PowerShell script that that uses Microsoft Graph to disable Microsoft I
 
 ## DESCRIPTION
 This sample script can be used in five ways: 
-    1. Using the GroupDisplayNames parameter, the user can specify the Microsoft Entra Id groups from which to disable the Intune service plans.
-    2. Using the UserPrincipalNames parameter, the user can specify the Microsoft Entra Id users from which to disable the Intune service plans.
-    3. Using the AllGroups switch parameter, the user can instruct the script to disable the Intune service plans from all Microsoft Entra Id groups in the directory.
-    4. Using the AllUsers switch parameter, the user can instruct the script to disable the Intune service plans from all Microsoft Entra Id users in the directory.
-    5. Using
+1. Using the GroupDisplayNames parameter, the user can specify the Microsoft Entra Id groups from which to disable the Intune service plans.
+2. Using the UserPrincipalNames parameter, the user can specify the Microsoft Entra Id users from which to disable the Intune service plans.
+3. Using the AllGroups switch parameter, the user can instruct the script to disable the Intune service plans from all Microsoft Entra Id groups in the directory.
+4. Using the AllUsers switch parameter, the user can instruct the script to disable the Intune service plans from all Microsoft Entra Id users in the directory.
+5. Using the InputFilePath parameter, the user can specify the file path to a CSV (comma-separated value) file that contains group display names and user principal names.
