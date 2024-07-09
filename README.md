@@ -1,7 +1,7 @@
 # Disable-IntuneServicePlans.ps1
 A sample PowerShell script that that uses Microsoft Graph to disable Microsoft Intune Service Plans from User and Group-Assigned Licenses in Microsoft Entra Id.
 
-.DESCRIPTION
+## DESCRIPTION
 This sample script can be used in five ways: 
     1. Using the GroupDisplayNames parameter, the user can specify the Microsoft Entra Id groups from which to disable the Intune service plans.
     2. Using the UserPrincipalNames parameter, the user can specify the Microsoft Entra Id users from which to disable the Intune service plans.
