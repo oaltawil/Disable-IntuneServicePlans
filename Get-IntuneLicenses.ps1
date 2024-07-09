@@ -13,7 +13,7 @@ foreach ($License in Get-MgSubscribedSku) {
 
             Write-Output "License: $($License.SkuPartNumber)"
             
-            return
+            break
             
         }
 
