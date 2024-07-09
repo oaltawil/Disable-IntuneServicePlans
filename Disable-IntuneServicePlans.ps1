@@ -119,9 +119,10 @@ $ErrorActionPreference = "Stop"
 <#
 Service Plan Reference: https://learn.microsoft.com/en-us/entra/identity/users/licensing-service-plan-reference
 
-    ServicePlanName                             ServicePlanId  
-    INTUNE_A (Microsoft Intune)                 c1ec4a95-1f05-45b3-a911-aa3fa01094f5
-    INTUNE_EDU (Microsoft Intune for Education) da24caf9-af8e-485c-b7c8-e73336da2693  
+    ServicePlanName                                     ServicePlanId
+    INTUNE_A (Microsoft Intune Plan 1)                  c1ec4a95-1f05-45b3-a911-aa3fa01094f5
+    INTUNE_EDU (Microsoft Intune Plan 1 for Education)  da24caf9-af8e-485c-b7c8-e73336da2693
+    Intune ServiceNow Integration
 #>
 $IntuneServicePlanNames = @(
     "Intune_A",
