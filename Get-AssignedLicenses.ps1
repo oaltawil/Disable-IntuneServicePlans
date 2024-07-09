@@ -216,11 +216,11 @@ if ($GroupDisplayNames) {
 
     # Get the groups with the specified display names and assigned licenses
     # !! Groups without any assigned licenses will be skipped !!
-    $Groups = $GroupDisplayNames | Foreach-Object {Get-MgGroup -Filter "DisplayName eq '$_'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses} | Where-Object AssignedLicenses -ne $null
+    $Groups = $GroupDisplayNames | Foreach-Object {Get-MgGroup -Filter "DisplayName eq '$_'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses}# | Where-Object AssignedLicenses -ne $null
 
     if (-not $Groups) {
 
-        Write-Error "Unable to find any groups with assigned licenses and the specified display names: $($GroupDisplayNames -join ', ')"
+        Write-Error "Unable to find any groups with the specified display names: $($GroupDisplayNames -join ', ')"
 
     }
     else {
@@ -236,11 +236,11 @@ elseif ($UserPrincipalNames) {
 
     # Get the users with the specified user principal names and assigned licenses
     # !! Users without any assigned licenses will be skipped !!
-    $Users = $UserPrincipalNames | Foreach-Object {Get-MgUser -Filter "UserPrincipalName eq '$_'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates} | Where-Object LicenseAssignmentStates -ne $null
+    $Users = $UserPrincipalNames | Foreach-Object {Get-MgUser -Filter "UserPrincipalName eq '$_'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates}# | Where-Object LicenseAssignmentStates -ne $null
 
     if (-not $Users) {
 
-        Write-Error "Unable to find any users with assigned licenses and the specified user principal names: $($UserPrincipalNames -join ', ')"
+        Write-Error "Unable to find any users with the specified user principal names: $($UserPrincipalNames -join ', ')"
 
     }
     else {
@@ -295,11 +295,11 @@ elseif ($InputFilePath) {
 
     # Get the users with the user principal names specified in the input file path and that have assigned licenses 
     # !! Users without any assigned licenses will be skipped !!
-    $Users = $DirectoryObjects | Where-Object Type -eq "User" | ForEach-Object {Get-MgUser -Filter "UserPrincipalName eq '$($_.Name)'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates} | Where-Object LicenseAssignmentStates -ne $null
+    $Users = $DirectoryObjects | Where-Object Type -eq "User" | ForEach-Object {Get-MgUser -Filter "UserPrincipalName eq '$($_.Name)'" -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates}# | Where-Object LicenseAssignmentStates -ne $null
 
     if (-not $Users) {
 
-        Write-Error "Unable to find any users with assigned licenses and the user principal names specified in the input file path."
+        Write-Error "Unable to find any users the user principal names specified in the input file path."
 
     }
     else {
@@ -311,11 +311,11 @@ elseif ($InputFilePath) {
 
     # Get the groups with the display names specified in the input file path and that have assigned licenses
     # !! Groups without any assigned licenses will be skipped !!
-    $Groups = $DirectoryObjects | Where-Object Type -eq "Group" | ForEach-Object {Get-MgGroup -Filter "DisplayName eq '$($_.Name)'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses} | Where-Object AssignedLicenses -ne $null
+    $Groups = $DirectoryObjects | Where-Object Type -eq "Group" | ForEach-Object {Get-MgGroup -Filter "DisplayName eq '$($_.Name)'" -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses}# | Where-Object AssignedLicenses -ne $null
 
     if (-not $Groups) {
 
-        Write-Error "Unable to find any groups with assigned licenses and the display names specified in the input file path."
+        Write-Error "Unable to find any groups with the display names specified in the input file path."
 
     }
     else {
