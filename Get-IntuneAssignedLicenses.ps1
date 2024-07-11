@@ -22,12 +22,12 @@ In no event shall Microsoft, its authors, or anyone else involved in the creatio
 .DESCRIPTION
 This sample script can be used to retrieve all Microsoft Entra Id Groups and Users that have been assigned licenses that contain the Intune service plans in an enabled state.
 
-The script generates two text files that contain the groups' Display Names and the users' User Princpal Names along with the SKU Part Number of the assigned license that contains the Intune service plans in an enabled state.
+The script generates two text files that contain the groups' Display Names and the users' User Princpal Names along with the SKU Part Number of the license.
  - GroupsWithIntuneEnabled.csv
  - UsersWithIntuneEnabled.csv
 
 .PARAMETER OutputFolderPath
-Optional. The full path to a folder where the script's two output files will be generated. If the folder does not exist, the script will create it. If this parameter is not provided, the script will generate the output files in a folder named "IntuneEnabledLicenses" located in the script's parent directory.
+Optional. The full path to a folder where the script's two output files will be generated. If the folder does not exist, the script will create it. If this parameter is not provided, the script will generate the output files in the script's parent folder.
         
 .EXAMPLE 
 Get-IntuneAssignedLicenses.ps1 -OutputFolderPath ~\Documents\Reports
@@ -37,7 +37,7 @@ Get-IntuneAssignedLicenses.ps1 -OutputFolderPath ~\Documents\Reports
 .EXAMPLE 
 Get-IntuneAssignedLicenses.ps1
 
-    The above command generates the two text files in a folder named "IntuneEnabledLicenses" located in the same directory as the script file.
+    The above command generates the two text files in the same directory as the script.
 
 #>
 
@@ -63,9 +63,8 @@ $IntuneServicePlanIds = @(
 # Set the default output folder path if the parameter is not provided
 if (-not $OutputFolderPath) {
 
-    $ScriptFolder = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
+    $OutputFolderPath = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
 
-    $OutputFolderPath = Join-Path -Path $ScriptFolder -ChildPath "IntuneEnabledLicenses"
 
 }
 
