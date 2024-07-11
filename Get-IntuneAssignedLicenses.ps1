@@ -27,17 +27,17 @@ The script generates two text files that contain the groups' Display Names and t
  - UsersWithIntuneEnabled.csv
 
 .PARAMETER OutputFolderPath
-Optional. The full path to a folder where the script's two output files will be generated. If the folder does not exist, the script will create it. If this parameter is not provided, the script will generate the output files in a folder named "IntuneEnabledLicenses" located under the script's folder.
+Optional. The full path to a folder where the script's two output files will be generated. If the folder does not exist, the script will create it. If this parameter is not provided, the script will generate the output files in a folder named "IntuneEnabledLicenses" located in the script's parent directory.
         
 .EXAMPLE 
-Get-IntuneAssignedLicenses.ps1 -OutputFolderPath ~\Documents\IntuneEnabledLicenses
+Get-IntuneAssignedLicenses.ps1 -OutputFolderPath ~\Documents\Reports
 
-    The above command generates the two text files in the "IntuneEnabledLicenses" folder located under the user's Documents folder.
+    The above command generates the two text files in the user's Documents folder in a subdirectory called "Reports". The script will create the "Reports" folder if it does not exist.
 
 .EXAMPLE 
 Get-IntuneAssignedLicenses.ps1
 
-    The above command generates the two text files in the "IntuneEnabledLicenses" folder located under the script's parent folder.
+    The above command generates the two text files in a folder named "IntuneEnabledLicenses" located in the same directory as the script file.
 
 #>
 
@@ -51,13 +51,7 @@ param (
 # Stop script execution upon encountering any errors
 $ErrorActionPreference = "Stop"
 
-<#
-Service Plan Reference: https://learn.microsoft.com/en-us/entra/identity/users/licensing-service-plan-reference
-
-    ServicePlanName                             ServicePlanId  
-    INTUNE_A (Microsoft Intune)                 c1ec4a95-1f05-45b3-a911-aa3fa01094f5
-    INTUNE_EDU (Microsoft Intune for Education) da24caf9-af8e-485c-b7c8-e73336da2693  
-#>
+# A hashtable with "ServicePlanName" Key and "ServicePlanId" Value pairs for the Intune service plans.
 $IntuneServicePlans = @{
     "INTUNE_A"   = "c1ec4a95-1f05-45b3-a911-aa3fa01094f5"
     "Intune_EDU" = "da24caf9-af8e-485c-b7c8-e73336da2693"
@@ -123,7 +117,7 @@ foreach ($Group in $Groups) {
         $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
 
         # If the Intune Service Plans are not disabled, then log this group and add it to the group output file
-        if (($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_A) -and ($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_EDU)) {
+        if (($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_A) -or ($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_EDU)) {
 
             # Write the group's display name and the sku part number to the output file
             Add-Content -Path $GroupOutputFilePath -Value "$($Group.DisplayName),$($SubscribedSku.SkuPartNumber)"
@@ -147,7 +141,7 @@ $UserOutputFilePath = Join-Path -Path $OutputFolderPath -ChildPath "UsersWithInt
 Set-Content -Path $UserOutputFilePath -Value "User Principal Name,SKU Part Number"
 
 # Get all users with assigned licenses
-$Users = Get-MgUser -All -Property DisplayName, Id, Mail, userPrincipalName, LicenseAssignmentStates | Where-Object LicenseAssignmentStates -ne $null
+$Users = Get-MgUser -All -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates | Where-Object LicenseAssignmentStates -ne $null
 
 foreach ($User in $Users) {
 
@@ -166,7 +160,7 @@ foreach ($User in $Users) {
         # Retrieve the subscribed sku details
         $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $UserAssignedLicense.SkuId
 
-        # Verify that the subscribed sku contains Intune service plans
+        # Verify that the subscribed sku contains *any* Intune service plans
         $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object {($_.ServicePlanId -eq $IntuneServicePlans.INTUNE_A) -or ($_.ServicePlanId -eq $IntuneServicePlans.Intune_EDU)}
 
         # If the subscribed sku does not contain any Intune service plans, then skip this user assigned license
@@ -176,10 +170,11 @@ foreach ($User in $Users) {
 
         }
 
+        # Retrieve the disabled service plans
         $DisabledServicePlanIds = $UserAssignedLicense.DisabledPlans
 
-        # If the Intune Service Plans are not disabled, then log this user and add it to the user output file
-        if (($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_A) -and ($DisabledServicePlanIds -notcontains $IntuneServicePlans.Intune_EDU)) {
+        # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this user and add it to the user output file
+        if (($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_A) -or ($DisabledServicePlanIds -notcontains $IntuneServicePlans.Intune_EDU)) {
 
             # Write the user's display name and the sku part number to the output file
             Add-Content -Path $UserOutputFilePath -Value "$($User.UserPrincipalName),$($SubscribedSku.SkuPartNumber)"
