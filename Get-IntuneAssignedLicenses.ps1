@@ -65,7 +65,6 @@ if (-not $OutputFolderPath) {
 
     $OutputFolderPath = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
 
-
 }
 
 # Create the output folder if it does not exist
@@ -120,7 +119,7 @@ foreach ($Group in $Groups) {
         $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
 
         # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this group and add it to the group output file
-        if ($DisabledServicePlanIds -notcontains $IntuneServicePlanIds) {
+        if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
 
             # Write the group's display name and the sku part number to the output file
             Add-Content -Path $GroupOutputFilePath -Value "$($Group.DisplayName),$($SubscribedSku.SkuPartNumber)"
@@ -177,7 +176,7 @@ foreach ($User in $Users) {
         $DisabledServicePlanIds = $UserAssignedLicense.DisabledPlans
 
         # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this user and add it to the user output file
-        if ($DisabledServicePlanIds -notcontains $IntuneServicePlanIds) {
+        if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
 
             # Write the user's display name and the sku part number to the output file
             Add-Content -Path $UserOutputFilePath -Value "$($User.UserPrincipalName),$($SubscribedSku.SkuPartNumber)"
