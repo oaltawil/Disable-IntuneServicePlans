@@ -10,8 +10,6 @@
 
 #>
 
-#Requires -PSEdition Core
-
 #Requires -Modules Microsoft.Graph.Authentication, Microsoft.Graph.groups, Microsoft.Graph.Users, Microsoft.Graph.Identity.DirectoryManagement
 
 <#
