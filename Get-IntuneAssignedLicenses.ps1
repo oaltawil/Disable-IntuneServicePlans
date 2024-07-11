@@ -43,7 +43,7 @@ Get-IntuneAssignedLicenses.ps1
 
 [CmdletBinding()]
 param (
-    [Parameter()]
+    [Parameter(Position = 0, Mandatory = $false)]
     [String]
     $OutputFolderPath
 )
@@ -51,12 +51,13 @@ param (
 # Stop script execution upon encountering any errors
 $ErrorActionPreference = "Stop"
 
-# An array containing Intune service plan Ids.
+# An array containing Intune Service Plan Ids.
+# Service Plan Reference: https://learn.microsoft.com/en-us/entra/identity/users/licensing-service-plan-reference
 $IntuneServicePlanIds = @(
-    # INTUNE_A (Microsoft Intune Plan 1)
-    "c1ec4a95-1f05-45b3-a911-aa3fa01094f5"
-    # INTUNE_EDU (Microsoft Intune Plan 1 for Education)
-    "da24caf9-af8e-485c-b7c8-e73336da2693"
+    
+    "c1ec4a95-1f05-45b3-a911-aa3fa01094f5"  # INTUNE_A      (Microsoft Intune Plan 1)
+    "da24caf9-af8e-485c-b7c8-e73336da2693"  # INTUNE_EDU    (Microsoft Intune Plan 1 for Education)
+
 )
 
 # Set the default output folder path if the parameter is not provided
