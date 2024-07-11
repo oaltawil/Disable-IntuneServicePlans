@@ -20,8 +20,9 @@ This sample script is not supported under any Microsoft standard support program
 In no event shall Microsoft, its authors, or anyone else involved in the creation, production, or delivery of the script be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary loss) arising out of the use of or inability to use the sample script, even if Microsoft has been advised of the possibility of such damages.
 
 .DESCRIPTION
-This sample script can be used to retrieve all Microsoft Entra Id Groups and Users with assigned licenses that contain the Intune service plans in an enabled state.
-The script generates two text files that contain the groups' Display Names and the users' User Princpal Names along with the SKU Part Number of the assigned licenses that contain the Intune service plans in an enabled state.
+This sample script can be used to retrieve all Microsoft Entra Id Groups and Users that have been assigned licenses that contain the Intune service plans in an enabled state.
+
+The script generates two text files that contain the groups' Display Names and the users' User Princpal Names along with the SKU Part Number of the assigned license that contains the Intune service plans in an enabled state.
  - GroupsWithIntuneEnabled.csv
  - UsersWithIntuneEnabled.csv
 
@@ -78,7 +79,6 @@ if (-not (Test-Path $OutputFolderPath)) {
 
     New-Item -Path $OutputFolderPath -ItemType Directory | Out-Null
 
-
 }
 
 # Retrieving licenses for a group requires the Group.Read.All permission scope
@@ -115,9 +115,9 @@ foreach ($Group in $Groups) {
 
         # If the subscribed sku does not contain any Intune service plans, then skip this group assigned license
         if (-not $SubscribedSkuIntuneServicePlans) {
-        
+
             continue
-        
+            
         }
 
         $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
@@ -173,7 +173,7 @@ foreach ($User in $Users) {
         if (-not $SubscribedSkuIntuneServicePlans) {
 
             continue
-        
+
         }
 
         $DisabledServicePlanIds = $UserAssignedLicense.DisabledPlans
