@@ -25,7 +25,7 @@ The script generates two text files that contain the groups' Display Names and t
  - UsersWithIntuneEnabled.csv
 
 .PARAMETER OutputFolderPath
-Optional. The full path to a folder where the script's two output files will be generated. If the folder does not exist, the script will create it. If this parameter is not provided, the script will generate the output files in the script's parent folder.
+Optional. The full path to a folder where the script's output files will be generated. If the folder does not exist, the script will create it. If this parameter is not provided, the script will generate the output files in the script's parent folder.
 
 .PARAMETER UsersOnly
 Optional. If this switch is specified, the script will only generate the UsersWithIntuneEnabled.csv file.
@@ -46,7 +46,7 @@ Get-IntuneAssignedLicenses.ps1
 .EXAMPLE
 Get-IntuneAssignedLicenses.ps1 -OutputFolderPath ~\Documents -GroupsOnly
 
-    The above command generates the GroupsWithIntuneEnabled.csv file in the user's Documents folder. The UsersWithIntuneEnabled.csv file will not be generated.
+    The above command generates the "GroupsWithIntuneEnabled.csv" file in the user's Documents folder. The "UsersWithIntuneEnabled.csv" file will not be generated.
 
 #>
 
