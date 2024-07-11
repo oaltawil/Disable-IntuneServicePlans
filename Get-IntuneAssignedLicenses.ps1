@@ -10,7 +10,7 @@
 
 #>
 
-#Requires -Modules Microsoft.Graph.Authentication, Microsoft.Graph.groups, Microsoft.Graph.Users, Microsoft.Graph.Identity.DirectoryManagement
+#Requires -Modules Microsoft.Graph.Authentication, Microsoft.Graph.Groups, Microsoft.Graph.Users, Microsoft.Graph.Identity.DirectoryManagement
 
 <#
 .NOTES
@@ -47,7 +47,6 @@ Get-IntuneAssignedLicenses.ps1
 Get-IntuneAssignedLicenses.ps1 -OutputFolderPath ~\Documents -GroupsOnly
 
     The above command generates the "GroupsWithIntuneEnabled.csv" file in the user's Documents folder. The "UsersWithIntuneEnabled.csv" file will not be generated.
-
 #>
 
 [CmdletBinding()]
@@ -94,13 +93,12 @@ if (-not (Test-Path $OutputFolderPath)) {
 # The Organization.Read.All permission scope is required to read the licenses available in the tenant
 Connect-MgGraph -Scopes "Group.Read.All", "User.Read.All", "Directory.Read.All", "Organization.Read.All" -NoWelcome
 
+###########################
+#                         #
+# Group-Assigned Licenses #
+#                         #
+###########################
 if (-not $UsersOnly) {
-
-    ###########################
-    #                         #
-    # Group-Assigned Licenses #
-    #                         #
-    ###########################
 
     # Generate the group output file path
     $GroupOutputFilePath = Join-Path -Path $OutputFolderPath -ChildPath "GroupsWithIntuneEnabled.csv"
@@ -120,7 +118,7 @@ if (-not $UsersOnly) {
             # Retrieve the subscribed sku details
             $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $GroupAssignedLicense.SkuId
 
-            # Verify that the subscribed sku contains an Intune service plan
+            # Verify that the subscribed sku contains *any* Intune service plans
             $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $IntuneServicePlanIds
 
             # If the subscribed sku does not contain any Intune service plans, then skip this group assigned license
@@ -133,12 +131,19 @@ if (-not $UsersOnly) {
             # Retrieve the disabled service plans
             $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
 
-            # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this group and add it to the group output file
-            if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
+            foreach ($IntuneServicePlanId in $IntuneServicePlanIds) {
 
-                # Write the group's display name and the sku part number to the output file
-                Add-Content -Path $GroupOutputFilePath -Value "$($Group.DisplayName),$($SubscribedSku.SkuPartNumber)"
-                
+                # If the Intune service plan is not disabled, then log this group and add it to the group output file
+                if ($DisabledServicePlanIds -notcontains $IntuneServicePlanId) {
+
+                    # Write the group's display name and the sku part number to the output file
+                    Add-Content -Path $GroupOutputFilePath -Value "$($Group.DisplayName),$($SubscribedSku.SkuPartNumber)"
+                    
+                    # Skip all remaining Intune service plans for this group
+                    break
+
+                }
+
             }
 
         }
@@ -147,13 +152,13 @@ if (-not $UsersOnly) {
 
 }
 
-if (-not $GroupsOnly) {
+##########################
+#                        #
+# User-Assigned Licenses #
+#                        #
+##########################
 
-    ##########################
-    #                        #
-    # User-Assigned Licenses #
-    #                        #
-    ##########################
+if (-not $GroupsOnly) {
 
     # Generate the user output file path
     $UserOutputFilePath = Join-Path -Path $OutputFolderPath -ChildPath "UsersWithIntuneEnabled.csv"
@@ -194,12 +199,19 @@ if (-not $GroupsOnly) {
             # Retrieve the disabled service plans
             $DisabledServicePlanIds = $UserAssignedLicense.DisabledPlans
 
-            # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this user and add it to the user output file
-            if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
+            foreach ($IntuneServicePlanId in $IntuneServicePlanIds) {
 
-                # Write the user's display name and the sku part number to the output file
-                Add-Content -Path $UserOutputFilePath -Value "$($User.UserPrincipalName),$($SubscribedSku.SkuPartNumber)"
+                # If the Intune service plan is not disabled, then log this group and add it to the group output file
+                if ($DisabledServicePlanIds -notcontains $IntuneServicePlanId) {
 
+                    # Write the user's display name and the sku part number to the output file
+                    Add-Content -Path $UserOutputFilePath -Value "$($User.UserPrincipalName),$($SubscribedSku.SkuPartNumber)"
+
+                    # Skip all remaining Intune service plans for this group
+                    break
+
+                }
+                
             }
         
         }
