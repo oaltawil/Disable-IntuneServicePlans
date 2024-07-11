@@ -131,15 +131,16 @@ if (-not $UsersOnly) {
             # Retrieve the disabled service plans
             $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
 
+            # Go through each Intune service plan and check if it is disabled
             foreach ($IntuneServicePlanId in $IntuneServicePlanIds) {
 
-                # If the Intune service plan is not disabled, then log this group and add it to the group output file
+                # If any Intune service plan is not disabled, then flag this group by adding it to the group output file
                 if ($DisabledServicePlanIds -notcontains $IntuneServicePlanId) {
 
-                    # Write the group's display name and the sku part number to the output file
+                    # Write the group's display name and the sku part number to the group output file
                     Add-Content -Path $GroupOutputFilePath -Value "$($Group.DisplayName),$($SubscribedSku.SkuPartNumber)"
                     
-                    # Skip all remaining Intune service plans for this group
+                    # Skip all remaining Intune service plans for this license  - to avoid duplicate entries - and proceed to the next group-assigned license
                     break
 
                 }
@@ -176,7 +177,7 @@ if (-not $GroupsOnly) {
 
         foreach ($UserAssignedLicense in $UserAssignedLicenses) {
 
-            # If the user assigned license is inherited; i.e. it is assigned by a group, then skip this user assigned license
+            # If the user assigned license is inherited; i.e. it is assigned by a group, then skip this user-assigned license
             if ($UserAssignedLicense.AssignedByGroup) {
 
                 continue
@@ -189,7 +190,7 @@ if (-not $GroupsOnly) {
             # Verify that the subscribed sku contains *any* Intune service plans
             $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $IntuneServicePlanIds
 
-            # If the subscribed sku does not contain any Intune service plans, then skip this user assigned license
+            # If the subscribed sku does not contain any Intune service plans, then skip this user-assigned license
             if (-not $SubscribedSkuIntuneServicePlans) {
 
                 continue
@@ -199,15 +200,16 @@ if (-not $GroupsOnly) {
             # Retrieve the disabled service plans
             $DisabledServicePlanIds = $UserAssignedLicense.DisabledPlans
 
+            # Go through each Intune service plan and check if it is disabled
             foreach ($IntuneServicePlanId in $IntuneServicePlanIds) {
 
-                # If the Intune service plan is not disabled, then log this group and add it to the group output file
+                # If any Intune service plan is not disabled, then flag this user by adding it to the user output file
                 if ($DisabledServicePlanIds -notcontains $IntuneServicePlanId) {
 
-                    # Write the user's display name and the sku part number to the output file
+                    # Write the user's user principal name and the sku part number to the user output file
                     Add-Content -Path $UserOutputFilePath -Value "$($User.UserPrincipalName),$($SubscribedSku.SkuPartNumber)"
 
-                    # Skip all remaining Intune service plans for this group
+                    # Skip all remaining Intune service plans for this license - to avoid duplicate entries - and proceed to the next user-assigned license
                     break
 
                 }
