@@ -45,7 +45,11 @@ Get-IntuneAssignedLicenses.ps1
 param (
     [Parameter(Position = 0, Mandatory = $false)]
     [String]
-    $OutputFolderPath
+    $OutputFolderPath,
+    [switch]
+    $UsersOnly,
+    [switch]
+    $GroupsOnly
 )
 
 # Stop script execution upon encountering any errors
@@ -81,108 +85,116 @@ if (-not (Test-Path $OutputFolderPath)) {
 # The Organization.Read.All permission scope is required to read the licenses available in the tenant
 Connect-MgGraph -Scopes "Group.Read.All", "User.Read.All", "Directory.Read.All", "Organization.Read.All" -NoWelcome
 
-###########################
-#                         #
-# Group-Assigned Licenses #
-#                         #
-###########################
+if (-not $UsersOnly) {
 
-# Generate the group output file path
-$GroupOutputFilePath = Join-Path -Path $OutputFolderPath -ChildPath "GroupsWithIntuneEnabled.csv"
+    ###########################
+    #                         #
+    # Group-Assigned Licenses #
+    #                         #
+    ###########################
 
-# Write the header to the output file (overwrite the file if it already exists)
-Set-Content -Path $GroupOutputFilePath -Value "Group Display Name,SKU Part Number"
+    # Generate the group output file path
+    $GroupOutputFilePath = Join-Path -Path $OutputFolderPath -ChildPath "GroupsWithIntuneEnabled.csv"
 
-# Get all groups with assigned licenses
-$Groups = Get-MgGroup -All -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses | Where-Object AssignedLicenses -ne $null
+    # Write the header to the output file (overwrite the file if it already exists)
+    Set-Content -Path $GroupOutputFilePath -Value "Group Display Name,SKU Part Number"
 
-foreach ($Group in $Groups) {
+    # Get all groups with assigned licenses
+    $Groups = Get-MgGroup -All -Property Id, MailNickname, DisplayName, GroupTypes, Description, AssignedLicenses | Where-Object AssignedLicenses -ne $null
 
-    $GroupAssignedLicenses = $Group.AssignedLicenses 
+    foreach ($Group in $Groups) {
 
-    foreach ($GroupAssignedLicense in $GroupAssignedLicenses) {
+        $GroupAssignedLicenses = $Group.AssignedLicenses 
 
-        # Retrieve the subscribed sku details
-        $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $GroupAssignedLicense.SkuId
+        foreach ($GroupAssignedLicense in $GroupAssignedLicenses) {
 
-        # Verify that the subscribed sku contains an Intune service plan
-        $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $IntuneServicePlanIds
+            # Retrieve the subscribed sku details
+            $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $GroupAssignedLicense.SkuId
 
-        # If the subscribed sku does not contain any Intune service plans, then skip this group assigned license
-        if (-not $SubscribedSkuIntuneServicePlans) {
+            # Verify that the subscribed sku contains an Intune service plan
+            $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $IntuneServicePlanIds
 
-            continue
-            
-        }
+            # If the subscribed sku does not contain any Intune service plans, then skip this group assigned license
+            if (-not $SubscribedSkuIntuneServicePlans) {
 
-        # Retrieve the disabled service plans
-        $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
+                continue
+                
+            }
 
-        # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this group and add it to the group output file
-        if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
+            # Retrieve the disabled service plans
+            $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
 
-            # Write the group's display name and the sku part number to the output file
-            Add-Content -Path $GroupOutputFilePath -Value "$($Group.DisplayName),$($SubscribedSku.SkuPartNumber)"
-            
+            # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this group and add it to the group output file
+            if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
+
+                # Write the group's display name and the sku part number to the output file
+                Add-Content -Path $GroupOutputFilePath -Value "$($Group.DisplayName),$($SubscribedSku.SkuPartNumber)"
+                
+            }
+
         }
 
     }
 
 }
 
-##########################
-#                        #
-# User-Assigned Licenses #
-#                        #
-##########################
+if (-not $GroupsOnly) {
 
-# Generate the user output file path
-$UserOutputFilePath = Join-Path -Path $OutputFolderPath -ChildPath "UsersWithIntuneEnabled.csv"
+    ##########################
+    #                        #
+    # User-Assigned Licenses #
+    #                        #
+    ##########################
 
-# Write the header to the user output file (overwrite the file if it already exists)
-Set-Content -Path $UserOutputFilePath -Value "User Principal Name,SKU Part Number"
+    # Generate the user output file path
+    $UserOutputFilePath = Join-Path -Path $OutputFolderPath -ChildPath "UsersWithIntuneEnabled.csv"
 
-# Get all users with assigned licenses
-$Users = Get-MgUser -All -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates | Where-Object LicenseAssignmentStates -ne $null
+    # Write the header to the user output file (overwrite the file if it already exists)
+    Set-Content -Path $UserOutputFilePath -Value "User Principal Name,SKU Part Number"
 
-foreach ($User in $Users) {
+    # Get all users with assigned licenses
+    $Users = Get-MgUser -All -Property DisplayName, Id, Mail, UserPrincipalName, LicenseAssignmentStates | Where-Object LicenseAssignmentStates -ne $null
 
-    # Retrieve the user's assigned licenses
-    $UserAssignedLicenses = $User.LicenseAssignmentStates
+    foreach ($User in $Users) {
 
-    foreach ($UserAssignedLicense in $UserAssignedLicenses) {
+        # Retrieve the user's assigned licenses
+        $UserAssignedLicenses = $User.LicenseAssignmentStates
 
-        # If the user assigned license is inherited; i.e. it is assigned by a group, then skip this user assigned license
-        if ($UserAssignedLicense.AssignedByGroup) {
+        foreach ($UserAssignedLicense in $UserAssignedLicenses) {
 
-            continue
+            # If the user assigned license is inherited; i.e. it is assigned by a group, then skip this user assigned license
+            if ($UserAssignedLicense.AssignedByGroup) {
 
+                continue
+
+            }
+
+            # Retrieve the subscribed sku details
+            $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $UserAssignedLicense.SkuId
+
+            # Verify that the subscribed sku contains *any* Intune service plans
+            $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $IntuneServicePlanIds
+
+            # If the subscribed sku does not contain any Intune service plans, then skip this user assigned license
+            if (-not $SubscribedSkuIntuneServicePlans) {
+
+                continue
+
+            }
+
+            # Retrieve the disabled service plans
+            $DisabledServicePlanIds = $UserAssignedLicense.DisabledPlans
+
+            # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this user and add it to the user output file
+            if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
+
+                # Write the user's display name and the sku part number to the output file
+                Add-Content -Path $UserOutputFilePath -Value "$($User.UserPrincipalName),$($SubscribedSku.SkuPartNumber)"
+
+            }
+        
         }
 
-        # Retrieve the subscribed sku details
-        $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $UserAssignedLicense.SkuId
-
-        # Verify that the subscribed sku contains *any* Intune service plans
-        $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object ServicePlanId -in $IntuneServicePlanIds
-
-        # If the subscribed sku does not contain any Intune service plans, then skip this user assigned license
-        if (-not $SubscribedSkuIntuneServicePlans) {
-
-            continue
-
-        }
-
-        # Retrieve the disabled service plans
-        $DisabledServicePlanIds = $UserAssignedLicense.DisabledPlans
-
-        # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this user and add it to the user output file
-        if (-not (($DisabledServicePlanIds -contains $IntuneServicePlanIds[0]) -and ($DisabledServicePlanIds -contains $IntuneServicePlanIds[1]))) {
-
-            # Write the user's display name and the sku part number to the output file
-            Add-Content -Path $UserOutputFilePath -Value "$($User.UserPrincipalName),$($SubscribedSku.SkuPartNumber)"
-
-        }
-    
     }
 
 }
