@@ -104,8 +104,8 @@ foreach ($Group in $Groups) {
         # Retrieve the subscribed sku details
         $SubscribedSku = Get-MgSubscribedSku | Where-Object SkuId -eq $GroupAssignedLicense.SkuId
 
-        # Verify that the subscribed sku contains Intune service plans
-        $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object {($_.ServicePlanId -eq $IntuneServicePlans.INTUNE_A) -or ($_.ServicePlanId -eq $IntuneServicePlans.Intune_EDU)}
+        # Verify that the subscribed sku contains an Intune service plan
+        $SubscribedSkuIntuneServicePlans = $SubscribedSku.ServicePlans | Where-Object {ServicePlanId -in $IntuneServicePlans.Values}
 
         # If the subscribed sku does not contain any Intune service plans, then skip this group assigned license
         if (-not $SubscribedSkuIntuneServicePlans) {
@@ -114,9 +114,10 @@ foreach ($Group in $Groups) {
             
         }
 
+        # Retrieve the disabled service plans
         $DisabledServicePlanIds = $GroupAssignedLicense.DisabledPlans
 
-        # If the Intune Service Plans are not disabled, then log this group and add it to the group output file
+        # All Intune service plans should be disabled. If any Intune service plan is not disabled, then log this group and add it to the group output file
         if (($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_A) -or ($DisabledServicePlanIds -notcontains $IntuneServicePlans.INTUNE_EDU)) {
 
             # Write the group's display name and the sku part number to the output file
